@@ -1,131 +1,131 @@
-import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:weather_app/app/domain/models/weather.dart';
-import 'package:weather_app/app/domain/services/weather_service.dart';
+// import 'package:flutter/material.dart';
+// import 'package:geocoding/geocoding.dart';
+// import 'package:geolocator/geolocator.dart';
+// import 'package:hive_flutter/hive_flutter.dart';
+// import 'package:weather_app/app/domain/models/weather.dart';
+// import 'package:weather_app/app/domain/services/weather_service.dart';
 
-class WeatherState extends ChangeNotifier {
-  // Variables
+// class WeatherState extends ChangeNotifier {
+//   // Variables
 
-  String? _cityName;
+//   String? _cityName;
 
-  Weather? _weather;
+//   Weather? _weather;
 
-  bool _isLoad = true;
+//   bool _isLoad = true;
 
-  final _box = Hive.box('settings');
+//   final _box = Hive.box('settings');
 
-  final _controller = TextEditingController();
+//   final _controller = TextEditingController();
 
-  // Getters
+//   // Getters
 
-  bool get isLoad => _isLoad;
+//   bool get isLoad => _isLoad;
 
-  String? get cityName => _cityName;
+//   String? get cityName => _cityName;
 
-  Weather? get weather => _weather;
+//   Weather? get weather => _weather;
 
-  TextEditingController get controller => _controller;
+//   TextEditingController get controller => _controller;
 
-  bool get isActive => _controller.text.trim().isNotEmpty;
+//   bool get isActive => _controller.text.trim().isNotEmpty;
 
-  // Functions
+//   // Functions
 
-  Future<Position?> getLocation() async {
-    bool permission = false;
-    // bool serviceEnabled = false;
+//   Future<Position?> getLocation() async {
+//     bool permission = false;
+//     // bool serviceEnabled = false;
 
-    // serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//     // serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
-    // if (!serviceEnabled) return null;
+//     // if (!serviceEnabled) return null;
 
-    LocationPermission status = await Geolocator.checkPermission();
+//     LocationPermission status = await Geolocator.checkPermission();
 
-    permission = !(status == LocationPermission.denied);
+//     permission = !(status == LocationPermission.denied);
 
-    if (!permission) {
-      status = await Geolocator.requestPermission();
+//     if (!permission) {
+//       status = await Geolocator.requestPermission();
 
-      permission = !(status == LocationPermission.denied);
-    }
+//       permission = !(status == LocationPermission.denied);
+//     }
 
-    if (!permission) return null;
+//     if (!permission) return null;
 
-    return await Geolocator.getCurrentPosition();
-  }
+//     return await Geolocator.getCurrentPosition();
+//   }
 
-  Future<void> getWeather(String cityName) async {
-    _isLoad = false;
-    notifyListeners();
+//   Future<void> getWeather(String cityName) async {
+//     _isLoad = false;
+//     notifyListeners();
 
-    _weather = await WeatherService().getWeather(cityName);
+//     _weather = await WeatherService().getWeather(cityName);
 
-    await _box.put('city_name', cityName);
+//     await _box.put('city_name', cityName);
 
-    _isLoad = true;
-    notifyListeners();
-  }
+//     _isLoad = true;
+//     notifyListeners();
+//   }
 
-  Future<String?> getCityName() async {
-    final location = await getLocation();
+//   Future<String?> getCityName() async {
+//     final location = await getLocation();
 
-    if (location == null) return null;
+//     if (location == null) return null;
 
-    final latitude = location.latitude;
+//     final latitude = location.latitude;
 
-    final longitude = location.longitude;
+//     final longitude = location.longitude;
 
-    List<Placemark> placemarks =
-        await placemarkFromCoordinates(latitude, longitude);
+//     List<Placemark> placemarks =
+//         await placemarkFromCoordinates(latitude, longitude);
 
-    Placemark placemark = placemarks[0];
+//     Placemark placemark = placemarks[0];
 
-    return placemark.country;
-  }
+//     return placemark.country;
+//   }
 
-  void onSend(BuildContext context) {
-    if (controller.text.trim().isEmpty) return;
+//   void onSend(BuildContext context) {
+//     if (controller.text.trim().isEmpty) return;
 
-    getWeather(controller.text);
+//     getWeather(controller.text);
 
-    _cityName = controller.text;
+//     _cityName = controller.text;
 
-    notifyListeners();
+//     notifyListeners();
 
-    controller.clear();
+//     controller.clear();
 
-    FocusScope.of(context).unfocus();
-  }
+//     FocusScope.of(context).unfocus();
+//   }
 
-  Future<void> initialize() async {
-    _cityName = await _box.get('city_name', defaultValue: null);
+//   Future<void> initialize() async {
+//     _cityName = await _box.get('city_name', defaultValue: null);
 
-    _cityName ??= await getCityName();
+//     _cityName ??= await getCityName();
 
-    if (cityName == null) return;
+//     if (cityName == null) return;
 
-    getWeather(cityName!);
-  }
+//     getWeather(cityName!);
+//   }
 
-  String? capitalize(String? text) {
-    if (text == null || text.isEmpty) return null;
+//   String? capitalize(String? text) {
+//     if (text == null || text.isEmpty) return null;
 
-    return text[0].toUpperCase() + text.substring(1);
-  }
+//     return text[0].toUpperCase() + text.substring(1);
+//   }
 
-  void setState() => notifyListeners();
+//   void setState() => notifyListeners();
 
-  // Initialize Weather State
+//   // Initialize Weather State
 
-  WeatherState() {
-    initialize();
-  }
+//   WeatherState() {
+//     initialize();
+//   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
+//   @override
+//   void dispose() {
+//     _controller.dispose();
 
-    super.dispose();
-  }
-}
+//     super.dispose();
+//   }
+// }

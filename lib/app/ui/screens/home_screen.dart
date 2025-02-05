@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:weather_app/app/domain/state/weather_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:weather_app/app/ui/themes/themes.dart';
+import 'package:weather_app/app/domain/cubit/weather_state.dart';
+import 'package:weather_app/app/domain/cubit/weather_cubit.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<WeatherState>();
-    final cityName = state.capitalize(state.cityName);
+    final weatherCubit = context.read<WeatherCubit>();
+    final TextEditingController controller = TextEditingController();
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -18,28 +19,47 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (cityName != null)
-              state.isLoad
-                  ? Text(
-                      state.weather?.temperature != null
-                          ? "${state.weather?.temperature}°"
-                          : "I couldn't find out what the temperature in $cityName was.",
-                      textAlign: TextAlign.center,
-                      style: FontStyles.s28w500,
+        child: BlocBuilder<WeatherCubit, WeatherState>(
+          builder: (context, state) {
+            if (state is WeatherLoading) {
+              return CircularProgressIndicator();
+            } else if (state is WeatherLoaded) {
+              return state.weather != null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "${state.weather?.temperature}°",
+                          textAlign: TextAlign.center,
+                          style: FontStyles.s28w500,
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          "In ${state.weather?.cityName}",
+                          style: FontStyles.s28w500,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     )
-                  : CircularProgressIndicator(),
-            SizedBox(height: 10),
-            if (state.weather?.temperature != null)
-              Text(
-                state.isActive ? state.controller.text : 'In $cityName',
+                  : Text(
+                      "I couldn't find such a city.",
+                      style: FontStyles.s28w500,
+                      textAlign: TextAlign.center,
+                    );
+            } else if (state is WeatherError) {
+              return Text(
+                state.message,
+                style: TextStyle(color: Colors.red, fontSize: 18),
+                textAlign: TextAlign.center,
+              );
+            } else {
+              return Text(
+                "Введите город для получения погоды",
                 style: FontStyles.s28w500,
                 textAlign: TextAlign.center,
-              ),
-          ],
+              );
+            }
+          },
         ),
       ),
       floatingActionButton: Row(
@@ -52,7 +72,7 @@ class HomeScreen extends StatelessWidget {
               ),
               margin: EdgeInsets.only(left: 25, right: 10),
               child: TextField(
-                controller: state.controller,
+                controller: controller,
                 decoration: InputDecoration(
                   border: AppTheme.outlineBorder,
                   focusedBorder: AppTheme.outlineBorder,
@@ -63,7 +83,17 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           FloatingActionButton(
-            onPressed: () => state.onSend(context),
+            onPressed: () async {
+              if (controller.text.trim().isEmpty) return;
+
+              await weatherCubit.getWeather(controller.text.trim());
+
+              if (!context.mounted) return;
+
+              controller.clear();
+
+              FocusScope.of(context).unfocus();
+            },
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
               side: BorderSide(color: AppColors.black),
